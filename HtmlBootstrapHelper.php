@@ -6,8 +6,227 @@ class HtmlBootstrapHelper extends HtmlHelper {
 	
 	public $helpers = array('Form');
 	
-	public function collapse($collapseData, $options = array())
+	public function dropdown($items, $options = array()) {
+		
+		$output = '<ul class="dropdown-menu">';
+		foreach ($items as $itemLabel => $itemOptions) {
+
+			$defaultsLink = array(
+				'link' => '#',
+				'tabindex' => -1,
+				'postLink' => false
+			);
+			
+			if (is_array($itemOptions)) {
+				$linkLabel = $itemLabel;
+				$linkOptions = array_merge($defaultsLink, $itemOptions);
+			} else {
+				$linkLabel = $itemOptions;
+				$linkOptions = $defaultsLink;
+			}
+			
+			$linkUrl = $linkOptions['link'];
+			unset($linkOptions['link']);
+			
+			$isPostLink = $linkOptions['postLink'];
+			unset($linkOptions['postLink']);
+			
+			if ($isPostLink) {
+				$output .= '<li>'.$this->Form->postLink($linkLabel, $linkUrl, $linkOptions).'</li>';
+			} else {
+				$output .= '<li>'.$this->link($linkLabel, $linkUrl, $linkOptions).'</li>';	
+			}
+		}
+		$output .= '</ul>';
+		
+		return $output;
+	}
+	
+	public function button($title, $options = array())
 	{
+		$options += array(
+			'size' => null,
+			'type' => null,
+			'link' => null,
+			'block' => false,
+			'disabled' => false,
+			'tag' => 'div',
+			'class' => 'btn'
+		);
+		
+		$useTag = $options['tag'];
+		unset($options['tag']);
+		
+		if ($options['type'])
+			$options['class'] .= ' btn-'.$options['type'];
+			
+		if ($options['size'])
+			$options['class'] .= ' btn-'.$options['size'];
+			
+		if ($options['block'])
+			$options['class'] .= ' btn-block';
+			
+		if ($options['disabled'] === true)
+			$options['class'] .= ' disabled';
+		
+		return $this->tag($useTag, __($title), $options);
+	}
+	
+	public function buttonGroup($buttons, $options = array())
+	{
+		if (!is_array($buttons))
+			return;
+		
+		$options += array(
+			'vertical' => false
+		);
+		
+		$output = '';
+		
+		foreach ($buttons as $buttonData) {
+		
+			if (is_string($buttonData)) {
+				$output .= $buttonData;	
+			} else {
+				$output .= $this->button($buttonData);
+			}
+			
+		}
+		
+		$classes = array(
+			'btn-group'
+		);
+		
+		if ($options['vertical'] === true)
+			$classes[] = 'btn-group-vertical';
+		
+		return $this->tag('div', $output, array('class' => $classes));
+	}
+	
+	public function buttonDropdown($title, $items, $options = array())
+	{
+		$options += array(
+			'button' => array(
+				'class' => '',
+				'data-toggle' => ''
+			),
+			'dropdown' => array()
+		);
+		
+		$options['button']['tag'] = 'a';
+		
+		$options['button']['class'] = trim('btn dropdown-toggle '.$options['button']['class']);
+		$options['button']['data-toggle'] = trim('dropdown ' . $options['button']['data-toggle']);
+		
+		$button = $this->button($title, $options['button']);
+		// Weird thing to add caret
+		$button = str_replace('</a>', '&nbsp;<span class="caret"></span></a>', $button);
+		
+		$dropdown = $this->dropdown($items, $options['dropdown']);
+		
+		return $this->buttonGroup(array(
+			$button,
+			$dropdown
+		));
+	}
+	
+	public function label($title, $options = array())
+	{
+		$options += array(
+		);
+		
+		$options['class'] = 'label';
+		if (!empty($options['type']))
+			$options['class'] .= ' label-'.$options['type'];
+			
+		return $this->tag('span', $title, $options);
+	}
+	
+	public function badge($title, $options = array())
+	{
+		$options += array(
+		);
+		
+		$options['class'] = 'badge';
+		if (!empty($options['type']))
+			$options['class'] .= ' badge-'.$options['type'];
+			
+		return $this->tag('span', $title, $options);
+	}
+	
+	public function alert($title, $content, $options = array())
+	{
+		$options += array(
+			'closeButton' => true,
+			'block' => false
+		);
+		
+		$options['class'] = 'alert';
+		
+		if (!empty($options['type'])) {
+			$options['class'] .= ' alert-'.$options['type'];
+			unset($options['type']);
+		}
+		
+		if ($options['block'] === true) {
+			$options['class'] .= ' alert-block';
+			$title = $this->tag('h4', $title);
+		} else {
+			$title = $this->tag('strong', $title);
+		}
+		
+		$alertContent = $title . ' ' . $content;
+		
+		if ($options['closeButton'] === true) {
+			$alertContent = $this->tag('button', '&times;', array('escape' => false, 'type' => 'button', 'class' => 'close', 'data-dismiss' => 'alert' )) . $alertContent;
+		}
+			
+		return $this->tag('div', $alertContent, $options);
+	}
+	
+	public function progress($value, $options = array())
+	{
+		$options += array(
+		);
+		
+		if (!is_numeric($value))
+			$value = 0;
+		
+
+		$value = $value < 0 ? 0 : ( $value > 100 ? 100 : $value);
+				
+		$options['class'] = 'progress';
+		
+		return $this->tag('div',
+			$this->tag('div',
+				'',
+				array(
+					'class' => 'bar',
+					'style' => 'width: '.$value.'%'
+				)),
+			$options);
+	}
+	
+	public function mediaObject($title, $content, $media, $options = array())
+	{
+		$options += array(
+		);
+		
+		$title = $this->tag('h4', $title, array('class' => 'media-heading'));
+		
+		$mediaContent = $media . $title . $content;
+		
+		return $this->tag('div', $mediaContent, array('media'));
+		
+	}
+	
+	public function well($content)
+	{
+		return $this->tag('div', $content, array('class' => 'well'));
+	}
+	
+	public function accordion($collapseData, $options = array())
+	{	
 		$output = '';
 		
 		if (!is_array($collapseData))
@@ -22,7 +241,7 @@ class HtmlBootstrapHelper extends HtmlHelper {
 			}
 		*/
 		
-		$accordionId = 'accordion-'.$accordionCount;
+		$accordionId = 'accordion-'.self::$accordionCount;
 		
 		$accordionContent = '';
 		foreach (array_values($collapseData) as $index => $collapse) {
@@ -32,10 +251,12 @@ class HtmlBootstrapHelper extends HtmlHelper {
 			$accordionHeadingOptions = array(
 				'class' => 'accordion-heading'
 			);
-			$accordionHeadingOptions = array_merge($accordionHeadingOptions, $options['headingDiv']);
+			if (!empty($options['headingDiv']))
+				$accordionHeadingOptions = array_merge($accordionHeadingOptions, $options['headingDiv']);
+				
 			$accordionHeading = $this->tag('div',
 				$this->link(
-					__($options['title']),
+					__($collapse['title']),
 					'#'.$accordionGroupId,
 					array(
 						'class' => 'accordion-toggle',
@@ -52,10 +273,11 @@ class HtmlBootstrapHelper extends HtmlHelper {
 					'accordion-body',
 					'collapse'
 				)
-			)
-			$accordionBodyOptions = array_merge($accordionBodyOptions, $options['bodyDiv']);
+			);
+			if (!empty($options['bodyDiv']))
+				$accordionBodyOptions = array_merge($accordionBodyOptions, $options['bodyDiv']);
 			
-			$accordionBodyInner = $this->tag('div', $options['body'], array('class' => 'accordion-inner'));
+			$accordionBodyInner = $this->tag('div', $collapse['body'], array('class' => 'accordion-inner'));
 			$accordionBody = $this->tag('div', $accordionBodyInner, $accordionBodyOptions);
 			
 			$accordionGroup = $this->tag('div',
@@ -97,7 +319,7 @@ class HtmlBootstrapHelper extends HtmlHelper {
 		return $this->tag('div', $headerContent.$bodyContent.$footerContent, $options);
 	}
 	
-	public function dropdown($toggle, $items, $options = array()) {
+	/*public function dropdown($toggle, $items, $options = array()) {
 		$defaults = array(
 			'data-toggle' => 'dropdown',
 			'backupLink' => '#',
@@ -144,7 +366,7 @@ class HtmlBootstrapHelper extends HtmlHelper {
 		$itemList .= '</ul>';
 		
 		return $this->tag('div', $toggleLink.$itemList, array('class' => 'dropdown' . ($options['arrow'] ? ' dropdown-arrowed' : '')));
-	}
+	}*/
 	
 	public function table($data, $options = array()) {
 		
